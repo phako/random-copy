@@ -19,6 +19,6 @@ CopyTask *
 copy_task_new (const char *source,
                const char *dest,
                size_t      block_size);
-void
+int
 copy_task_run (CopyTask *self);
 #endif

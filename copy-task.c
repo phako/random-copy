@@ -36,17 +36,11 @@ int copy_task_copy_block (CopyTask *self,
     if (fseek (self->out, self->offset_list[index], SEEK_SET))
         return -1;
 
-    bytes_read = fread (self->buffer,
-                        1,
-                        self->block_size,
-                        self->in);
+    bytes_read = fread (self->buffer, 1, self->block_size, self->in);
     if (ferror (self->in))
         return -1;
 
-    fwrite (self->buffer,
-            1,
-            bytes_read,
-            self->out);
+    fwrite (self->buffer, 1, bytes_read, self->out);
     if (ferror (self->in))
         return -1;
 
@@ -72,7 +66,7 @@ void copy_task_generate_offset_list (CopyTask *self)
     self->offset_list[1] = self->in_size - self->block_size;
 
     /* Use Knuth/Fisher-Yates shuffle to get a random block distribution */
-    printf ("Need to generate offset list: %lu... ", self->offset_list_length);
+    printf ("Generating offset list: %lu... ", self->offset_list_length);
     self->offset_list[2] = self->block_size;
     for (i = 3; i < self->offset_list_length; ++i)
     {
@@ -114,11 +108,13 @@ CopyTask *copy_task_new (const char* source,
     self->in = fopen (source, "rb");
     if (!self->in)
         goto error;
+
     self->in_fd = fileno (self->in);
 
     self->out = fopen (dest, "wb");
     if (!self->out)
         goto error;
+
     self->out_fd = fileno (self->out);
 
     memset (&info, 0, sizeof (struct stat));
@@ -135,29 +131,31 @@ error:
     return NULL;
 }
 
-void copy_task_run (CopyTask *self)
+int copy_task_run (CopyTask *self)
 {
     size_t index;
 
-    printf ("Pre-allocating file...");
+    printf ("Pre-allocating file... ");
     if (ftruncate (self->out_fd, self->in_size) != 0)
     {
         printf ("Failed: %s\n", strerror (errno));
-        return;
+
+        return -1;
     }
     printf ("Done.\n");
 
     copy_task_generate_offset_list (self);
     for (index = 0; index < self->offset_list_length; ++index)
     {
-        printf("Copying chunk #%010lu/%010lu\r",
-               index,
-               self->offset_list_length);
+        printf("Copying chunk #%010lu/%010lu\r", index, self->offset_list_length);
         fflush (stdout);
         if (copy_task_copy_block (self, index))
-            return;
+            return -1;
+
         usleep (100000);
     }
+
+    return 0;
 }
 
 
