@@ -1,5 +1,5 @@
 random-copy: random-copy.c copy-task.c
-	cc -g -O0 -Wall -Wextra -Werror -o random-copy random-copy.c copy-task.c
+	$(CC) -g -O0 -Wall -Wextra -Werror -o random-copy random-copy.c copy-task.c
 
 install: random-copy
 	mkdir -p $(HOME)/.local/bin
